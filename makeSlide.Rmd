@@ -1,0 +1,51 @@
+---
+title: "Best MLB pitcher seasons since 1995"
+# output: ioslides_presentation
+output:
+  xaringan::moon_reader:
+    seal: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+<font size="4">Best MLB pitcher seasons since 1995 (5/3/2020) </font> <br> <br>
+
+<font size="2">The plot below shows the Top 5 pitcher seasons of each MLB season since 1995. Hover over data points for more pitcher stats. Lines connect multiple seasons for a particular pitcher. Pitcher-seasons are ranked by Wins Above Replacement (WAR) as calculated by FanGraphs. Thank you to FanGraphs for making the data so easily accessible.</font>
+
+```{r, fig.align="center", echo=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+all_years_data <- data.frame()
+years <- 1995:2019
+
+for (year in years){
+  this_year_df <- read.csv(paste('data/', as.character(year), ".csv", sep=""))
+  this_year_df["year"] <- year
+  all_years_data <- rbind(all_years_data, this_year_df)
+}
+
+top_n_year <- all_years_data %>% group_by(year) %>% top_n(5, WAR)
+
+hover_text <- with(top_n_year,
+                   paste0(Name, ', ', Team, ', ', year, ', ', WAR, ' WAR',
+                          '<br>', IP, ' IP, ', W, '-', L, ', ', ERA, ' ERA',
+                          '<br>', FIP, ' FIP: ', K.9, ' K/9, ', BB.9, ' BB/9, ', HR.9, ' HR/9'
+                   ))
+
+pd <- position_dodge(0.3)
+
+g <- ggplot(top_n_year, aes(x=year, y=WAR, text=hover_text, group=Name, color=Name))
+g <- g + geom_point(alpha=0.4, position=pd)
+g <- g + geom_line(alpha=0.1, size=0.4, position=pd)
+g <- g + xlab("")
+g <- g + scale_x_discrete(limits=years)
+g <- g + scale_y_discrete(limits=4:12)
+g <- g + ylab("Pitcher WAR")
+g <- g + theme(axis.text.x = element_text(angle = 60), legend.position="none")
+
+ggplotly(g, tooltip="text")
+```
